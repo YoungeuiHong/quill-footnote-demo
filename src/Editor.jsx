@@ -23,11 +23,11 @@ const Editor = forwardRef(
         }, [ref, readOnly]);
 
         const editorHTML = `
-      <div id="toolbar">
-        <button type="button" id="ql-footnote" class="ql-footnote" style="width: auto">Insert Footnote</button>
-      </div>
-      <div id="editor-container" style="height: 400px;" />
-  `;
+              <div id="toolbar">
+                <button type="button" id="ql-footnote" class="ql-footnote" style="width: auto">Insert Footnote</button>
+              </div>
+              <div id="editor-container" style="height: 400px;" />
+          `;
 
         useEffect(() => {
             const container = containerRef.current;
@@ -72,7 +72,7 @@ const Editor = forwardRef(
                 ref.current = null;
                 container.innerHTML = "";
             };
-        }, [ref]);
+        }, [ref, editorHTML]);
 
         return (
             <div style={{ margin: "auto", maxWidth: "800px", width: "80%" }}>
