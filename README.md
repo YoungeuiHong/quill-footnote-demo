@@ -1,70 +1,222 @@
-# Getting Started with Create React App
+# quill-footnote
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Quill-Footnote is a Quill module that enables easy insertion and management of footnotes within a Quill editor. It handles automatic indexing, insertion, deletion, and navigation of footnotes.
 
-## Available Scripts
+## Installation
+```sh
+npm install quill-footnote
+# or
+yarn add quill-footnote
+```
 
-In the project directory, you can run:
+Ensure that `quill` is installed in your project:
 
-### `yarn start`
+```sh
+npm install quill
+# or
+yarn add quill
+```
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+## Usage
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+### Register the Module
 
-### `yarn test`
+To use `quill-footnote`, you must first register the module with Quill:
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+```javascript
+import Quill from "quill";
+import { FootnoteModule, footnoteKeyboardBindings } from "quill-footnote";
 
-### `yarn build`
+Quill.register("modules/footnote", FootnoteModule);
+```
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### Include the Module in Quill Configuration
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+When initializing your Quill editor, ensure that the `footnote` module and related keyboard bindings are included in the configuration.  
+`footnoteKeyboardBindings` provides custom shortcuts for managing footnotes, such as deleting them using Backspace or Delete.
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+```javascript
+const quill = new Quill(editorContainer, {
+  theme: "snow",
+  modules: {
+    toolbar: {
+      container: "#toolbar",
+    },
+    footnote: true, // Enables footnote functionality
+    keyboard: {
+      bindings: {
+        ...footnoteKeyboardBindings, // Ensures proper keyboard interactions with footnotes
+      },
+    },
+  },
+});
+```
 
-### `yarn eject`
+### Insert Footnotes
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+You can insert footnotes by using the `addFootnote(content: string)` method provided by the `FootnoteModule`.
+To add a toolbar button for inserting footnotes, you can create a button and register a click event listener as shown below:
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+```javascript
+const footnoteButton = document.querySelector("#ql-footnote");
+footnoteButton.addEventListener("click", function () {
+  const footnoteModule = quill.getModule("footnote");
+  footnoteModule.addFootnote("");
+});
+```
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+### CSS Styling
+The default styles for `quill-footnote` are included in:
 
-## Learn More
+```javascript
+import "quill-footnote/dist/quill-footnote.css";
+```
+If needed, you can override these styles in your own CSS file after importing `"quill-footnote/dist/quill-footnote.css"`.
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+**Default Styles (quill-footnote/dist/quill-footnote.css):**
+```css
+a.footnote-number {
+    text-decoration: none !important;
+    padding-left: 1px;
+    padding-right: 1px;
+    cursor: pointer;
+}
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+hr.footnote-divider {
+    background-color: #dddddd;
+    height: 1px;
+    border: 0;
+}
 
-### Code Splitting
+.footnote-row::before {
+    content: "[" attr(data-index) "] ";
+    pointer-events: auto;
+    color: #007bff;
+    cursor: pointer;
+}
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+.footnote-row {
+    pointer-events: auto;
+}
 
-### Analyzing the Bundle Size
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+### Complete React Example
 
-### Making a Progressive Web App
+Here's a complete example demonstrating how you might integrate `quill-footnote` in a React project:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+**App.jsx**
+```jsx
+import { useRef } from "react";
+import Editor from "./Editor";
 
-### Advanced Configuration
+function App() {
+  const quillRef = useRef(null);
+  return <Editor ref={quillRef} readOnly={false} />;
+}
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+export default App;
+```
 
-### Deployment
+**Editor.jsx**
+```jsx
+import React, { forwardRef, useEffect, useLayoutEffect, useRef } from "react";
+import Quill from "quill";
+import { footnoteKeyboardBindings, FootnoteModule } from "quill-footnote";
+import "quill/dist/quill.snow.css";
+import "quill-footnote/dist/quill-footnote.css"; // Import default footnote styles
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+Quill.register("modules/footnote", FootnoteModule); // Register the footnote module
 
-### `yarn build` fails to minify
+const Editor = forwardRef(
+    ({ readOnly, defaultValue, onTextChange, onSelectionChange }, ref) => {
+        const containerRef = useRef(null);
+        const defaultValueRef = useRef(defaultValue);
+        const onTextChangeRef = useRef(onTextChange);
+        const onSelectionChangeRef = useRef(onSelectionChange);
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+        useLayoutEffect(() => {
+            onTextChangeRef.current = onTextChange;
+            onSelectionChangeRef.current = onSelectionChange;
+        });
+
+        useEffect(() => {
+            ref.current?.enable(!readOnly);
+        }, [ref, readOnly]);
+
+        // Add a footnote button to the toolbar for inserting footnotes
+        const editorHTML = `
+              <div id="toolbar">
+                <button type="button" id="ql-footnote" class="ql-footnote" style="width: auto">Insert Footnote</button>
+              </div>
+              <div id="editor-container" style="height: 400px;" />
+          `;
+
+        useEffect(() => {
+            const container = containerRef.current;
+            container.innerHTML = editorHTML;
+
+            const quill = new Quill("#editor-container", {
+                modules: {
+                    toolbar: {
+                        container: "#toolbar",
+                    },
+                    footnote: true, // Enables footnote functionality
+                    keyboard: {
+                        bindings: {
+                            ...footnoteKeyboardBindings, // Ensures proper keyboard interactions with footnotes
+                        },
+                    },
+                },
+                theme: "snow",
+            });
+
+            ref.current = quill;
+
+            if (defaultValueRef.current) {
+                quill.setContents(defaultValueRef.current);
+            }
+
+            quill.on(Quill.events.TEXT_CHANGE, (...args) => {
+                onTextChangeRef.current?.(...args);
+            });
+
+            quill.on(Quill.events.SELECTION_CHANGE, (...args) => {
+                onSelectionChangeRef.current?.(...args);
+            });
+
+            // Add event listener for the footnote button
+            const footnoteButton = document.querySelector("#ql-footnote");
+            footnoteButton.addEventListener("click", function () {
+                const module = quill.getModule("footnote");
+                module.addFootnote("");
+            });
+
+            return () => {
+                ref.current = null;
+                container.innerHTML = "";
+            };
+        }, [ref]);
+
+        return <div ref={containerRef} />
+    },
+);
+
+Editor.displayName = "Editor";
+export default Editor;
+
+```
+
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Contributing
+
+Contributions are welcome! If you find an issue or have a feature request, feel free to open an issue or submit a pull request.
+
+## Author
+
+[Youngeui Hong](https://github.com/YoungeuiHong)
